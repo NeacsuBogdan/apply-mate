@@ -1,50 +1,92 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using ApplyMate.App.Navigation;
+using ApplyMate.App.Services.Automation;
+using ApplyMate.App.Services.Notifications;
+using ApplyMate.App.Services.Settings;
+using ApplyMate.App.ViewModels;
+using ApplyMate.Core.Abstractions;
+using ApplyMate.Core.Services;
+using ApplyMate.Infrastructure.Persistence;
+using ApplyMate.Infrastructure.Persistence.Pathing;
+using ApplyMate.Infrastructure.Repositories;
+using ApplyMate.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+namespace ApplyMate.App;
 
-namespace ApplyMate.App
+public partial class App : Application
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    public partial class App : Application
+    public App()
     {
-        private Window? _window;
+        InitializeComponent();
+        Services = ConfigureServices();
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            InitializeComponent();
-        }
+        var notificationService = Services.GetRequiredService<IAppNotificationService>();
+        notificationService.Initialize();
+    }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
-        {
-            _window = new MainWindow();
-            _window.Activate();
-        }
+    public static IServiceProvider Services { get; private set; } = null!;
+    public static Window? CurrentWindow { get; private set; }
+
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        var databaseInitializer = Services.GetRequiredService<IApplyMateDatabaseInitializer>();
+        databaseInitializer.EnsureCreatedAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        var noResponseAutomation = Services.GetRequiredService<INoResponseAutomationService>();
+        noResponseAutomation.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        var notificationService = Services.GetRequiredService<IAppNotificationService>();
+        notificationService.RescheduleAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        CurrentWindow = Services.GetRequiredService<MainWindow>();
+        CurrentWindow.Activate();
+    }
+
+    private static IServiceProvider ConfigureServices()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        RegisterCore(services);
+        RegisterInfrastructure(services);
+        RegisterApp(services);
+
+        return services.BuildServiceProvider();
+    }
+
+    private static void RegisterCore(IServiceCollection services)
+    {
+        services.AddSingleton<IDateProvider, SystemDateProvider>();
+        services.AddSingleton<ISettingsStore, JsonSettingsStore>();
+    }
+
+    private static void RegisterInfrastructure(IServiceCollection services)
+    {
+        services.AddSingleton<ILocalStoragePathProvider, WindowsLocalStoragePathProvider>();
+        services.AddSingleton<IDatabasePathProvider, SqliteDatabasePathProvider>();
+        services.AddSingleton<IDbContextFactory<ApplyMateDbContext>, SqliteDbContextFactory>();
+        services.AddSingleton<IApplyMateDatabaseInitializer, ApplyMateDatabaseInitializer>();
+
+        services.AddTransient<IJobApplicationRepository, JobApplicationRepository>();
+        services.AddTransient<ICvStorageService, CvStorageService>();
+    }
+
+    private static void RegisterApp(IServiceCollection services)
+    {
+        services.AddSingleton<PageRegistry>();
+        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<INoResponseAutomationService, NoResponseAutomationService>();
+        services.AddSingleton<IAppNotificationService, AppNotificationService>();
+
+        services.AddTransient<MainWindow>();
+        services.AddTransient<MainShellViewModel>();
+
+        services.AddTransient<DashboardViewModel>();
+        services.AddTransient<ApplicationsViewModel>();
+        services.AddTransient<SettingsViewModel>();
+        services.AddTransient<AddApplicationViewModel>();
+        services.AddTransient<ApplicationDetailsViewModel>();
     }
 }
