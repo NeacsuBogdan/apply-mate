@@ -7,8 +7,9 @@ namespace ApplyMate.App.Services.Tray;
 
 public sealed class TrayIconService : ITrayIconService
 {
-    private const int GwlpWndProc = -4;
     private const int WmClose = 0x0010;
+    private const int WmSysCommand = 0x0112;
+    private const int ScClose = 0xF060;
     private const int WmNull = 0x0000;
     private const int WmApp = 0x8000;
     private const int WmTrayIcon = WmApp + 11;
@@ -30,15 +31,15 @@ public sealed class TrayIconService : ITrayIconService
     private const int SwHide = 0;
     private const int SwShow = 5;
     private const int SwRestore = 9;
+    private const uint TraySubclassId = 1;
     private static readonly nint IdiApplication = 32512;
 
-    private readonly WndProc _wndProcDelegate;
+    private readonly SubclassProc _subclassProcDelegate;
     private readonly object _lock = new();
 
     private Window? _window;
     private DispatcherQueue? _dispatcherQueue;
     private IntPtr _hwnd;
-    private IntPtr _originalWndProc;
     private NotifyIconData _notifyIconData;
     private bool _isInitialized;
     private bool _isExitRequested;
@@ -46,7 +47,7 @@ public sealed class TrayIconService : ITrayIconService
 
     public TrayIconService()
     {
-        _wndProcDelegate = WindowProcedure;
+        _subclassProcDelegate = WindowProcedure;
     }
 
     public bool IsExitRequested => _isExitRequested;
@@ -66,9 +67,7 @@ public sealed class TrayIconService : ITrayIconService
             _window = window;
             _dispatcherQueue = window.DispatcherQueue;
             _hwnd = WindowNative.GetWindowHandle(window);
-
-            var wndProcPtr = Marshal.GetFunctionPointerForDelegate(_wndProcDelegate);
-            _originalWndProc = SetWindowLongPtr(_hwnd, GwlpWndProc, wndProcPtr);
+            _ = SetWindowSubclass(_hwnd, _subclassProcDelegate, TraySubclassId, IntPtr.Zero);
 
             _notifyIconData = new NotifyIconData
             {
@@ -100,7 +99,7 @@ public sealed class TrayIconService : ITrayIconService
             if (_isInitialized)
             {
                 _ = Shell_NotifyIcon(NimDelete, ref _notifyIconData);
-                SetWindowLongPtr(_hwnd, GwlpWndProc, _originalWndProc);
+                _ = RemoveWindowSubclass(_hwnd, _subclassProcDelegate, TraySubclassId);
                 _isInitialized = false;
             }
         }
@@ -120,8 +119,20 @@ public sealed class TrayIconService : ITrayIconService
         IntPtr hWnd,
         uint msg,
         IntPtr wParam,
-        IntPtr lParam)
+        IntPtr lParam,
+        IntPtr uIdSubclass,
+        IntPtr dwRefData)
     {
+        if (msg == WmSysCommand && !_isExitRequested)
+        {
+            var command = unchecked((int)wParam.ToInt64()) & 0xFFF0;
+            if (command == ScClose)
+            {
+                HideWindow();
+                return IntPtr.Zero;
+            }
+        }
+
         if (msg == WmClose && !_isExitRequested)
         {
             HideWindow();
@@ -144,7 +155,7 @@ public sealed class TrayIconService : ITrayIconService
             }
         }
 
-        return CallWindowProc(_originalWndProc, hWnd, msg, wParam, lParam);
+        return DefSubclassProc(hWnd, msg, wParam, lParam);
     }
 
     private void ShowContextMenu()
@@ -226,17 +237,13 @@ public sealed class TrayIconService : ITrayIconService
         _ = SetForegroundWindow(_hwnd);
     }
 
-    private static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
-    {
-        if (IntPtr.Size == 8)
-        {
-            return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
-        }
-
-        return new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
-    }
-
-    private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+    private delegate IntPtr SubclassProc(
+        IntPtr hWnd,
+        uint uMsg,
+        IntPtr wParam,
+        IntPtr lParam,
+        IntPtr uIdSubclass,
+        IntPtr dwRefData);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct NotifyIconData
@@ -277,17 +284,23 @@ public sealed class TrayIconService : ITrayIconService
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern bool Shell_NotifyIcon(uint dwMessage, ref NotifyIconData lpData);
 
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
-    private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongW", SetLastError = true)]
-    private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern IntPtr CallWindowProc(
-        IntPtr lpPrevWndFunc,
+    [DllImport("comctl32.dll", SetLastError = true)]
+    private static extern bool SetWindowSubclass(
         IntPtr hWnd,
-        uint msg,
+        SubclassProc pfnSubclass,
+        uint uIdSubclass,
+        IntPtr dwRefData);
+
+    [DllImport("comctl32.dll", SetLastError = true)]
+    private static extern bool RemoveWindowSubclass(
+        IntPtr hWnd,
+        SubclassProc pfnSubclass,
+        uint uIdSubclass);
+
+    [DllImport("comctl32.dll", SetLastError = true)]
+    private static extern IntPtr DefSubclassProc(
+        IntPtr hWnd,
+        uint uMsg,
         IntPtr wParam,
         IntPtr lParam);
 
@@ -326,7 +339,7 @@ public sealed class TrayIconService : ITrayIconService
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    [DllImport("user32.dll", SetLastError = true)]
+    [DllImport("user32.dll", EntryPoint = "ShowWindow", SetLastError = true)]
     private static extern bool ShowWindowNative(IntPtr hWnd, int nCmdShow);
 
     [DllImport("user32.dll", SetLastError = true)]
