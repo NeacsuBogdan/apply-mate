@@ -1,4 +1,4 @@
-﻿# ApplyMate
+# ApplyMate
 
 ApplyMate is a WinUI 3 desktop app for tracking job applications, interviews, and follow-ups.
 
