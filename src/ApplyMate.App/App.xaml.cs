@@ -2,6 +2,7 @@ using ApplyMate.App.Navigation;
 using ApplyMate.App.Services.Automation;
 using ApplyMate.App.Services.Notifications;
 using ApplyMate.App.Services.Settings;
+using ApplyMate.App.Services.Tray;
 using ApplyMate.App.ViewModels;
 using ApplyMate.Core.Abstractions;
 using ApplyMate.Core.Services;
@@ -41,6 +42,8 @@ public partial class App : Application
         notificationService.RescheduleAsync(CancellationToken.None).GetAwaiter().GetResult();
 
         CurrentWindow = Services.GetRequiredService<MainWindow>();
+        var trayIconService = Services.GetRequiredService<ITrayIconService>();
+        trayIconService.Initialize(CurrentWindow);
         CurrentWindow.Activate();
     }
 
@@ -79,6 +82,7 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<INoResponseAutomationService, NoResponseAutomationService>();
         services.AddSingleton<IAppNotificationService, AppNotificationService>();
+        services.AddSingleton<ITrayIconService, TrayIconService>();
 
         services.AddTransient<MainWindow>();
         services.AddTransient<MainShellViewModel>();
