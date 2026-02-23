@@ -7,6 +7,12 @@
     <Grid
         Padding="24"
         RowSpacing="12">
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition />
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -64,47 +70,55 @@
             Text="{Binding ErrorMessage}"
             TextWrapping="WrapWholeWords" />
 
-        <ListView
-            Grid.Row="3"
-            IsItemClickEnabled="True"
-            ItemClick="OnApplicationClick"
-            ItemsSource="{Binding Applications}"
-            SelectionMode="None">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Grid Padding="12" ColumnSpacing="12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+        <Grid Grid.Row="3">
+            <ListView
+                IsItemClickEnabled="True"
+                ItemClick="OnApplicationClick"
+                ItemsSource="{Binding Applications}"
+                SelectionMode="None">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="12" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding CompanyName}" />
-                            <TextBlock Opacity="0.75" Text="{Binding JobName}" />
-                        </StackPanel>
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding CompanyName}" />
+                                <TextBlock Opacity="0.75" Text="{Binding JobName}" />
+                            </StackPanel>
 
-                        <Border
-                            Grid.Column="1"
-                            Padding="10,3"
-                            Background="{Binding StatusBadgeBrush}"
-                            CornerRadius="999">
-                            <TextBlock FontWeight="SemiBold" Text="{Binding StatusText}" />
-                        </Border>
+                            <Border
+                                Grid.Column="1"
+                                Padding="10,3"
+                                Background="{Binding StatusBadgeBrush}"
+                                CornerRadius="999">
+                                <TextBlock FontWeight="SemiBold" Text="{Binding StatusText}" />
+                            </Border>
 
-                        <TextBlock
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Text="{Binding AppliedOnText}" />
+                            <TextBlock
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Text="{Binding AppliedOnText}" />
 
-                        <TextBlock
-                            Grid.Column="3"
-                            VerticalAlignment="Center"
-                            Text="{Binding InterviewAtText}" />
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+                            <TextBlock
+                                Grid.Column="3"
+                                VerticalAlignment="Center"
+                                Text="{Binding InterviewAtText}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Opacity="0.7"
+                Text="No applications match the current filters."
+                Visibility="{Binding EmptyStateVisibility}" />
+        </Grid>
     </Grid>
 </Page>

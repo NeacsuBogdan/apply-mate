@@ -6,6 +6,7 @@ using ApplyMate.Core.Domain;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Xaml;
 
 namespace ApplyMate.App.ViewModels;
 
@@ -44,6 +45,11 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
 
     [ObservableProperty]
     private string? _errorMessage;
+
+    [ObservableProperty]
+    private bool _hasApplications;
+
+    public Visibility EmptyStateVisibility => HasApplications ? Visibility.Collapsed : Visibility.Visible;
 
     [RelayCommand]
     private void AddApplication()
@@ -139,6 +145,8 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
             {
                 Applications.Add(new ApplicationListItemViewModel(app));
             }
+
+            HasApplications = Applications.Count > 0;
         }
         catch (OperationCanceledException)
         {
@@ -151,5 +159,10 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
         {
             IsBusy = false;
         }
+    }
+
+    partial void OnHasApplicationsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(EmptyStateVisibility));
     }
 }

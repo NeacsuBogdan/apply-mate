@@ -9,6 +9,12 @@
         <StackPanel
             Padding="24"
             Spacing="20">
+            <StackPanel.ChildrenTransitions>
+                <TransitionCollection>
+                    <EntranceThemeTransition />
+                </TransitionCollection>
+            </StackPanel.ChildrenTransitions>
+
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -112,6 +118,11 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <TextBlock
+                        Margin="2,0,0,0"
+                        Opacity="0.7"
+                        Text="No interviews in the next 7 days."
+                        Visibility="{Binding UpcomingEmptyVisibility}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Spacing="8">
@@ -132,6 +143,11 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <TextBlock
+                        Margin="2,0,0,0"
+                        Opacity="0.7"
+                        Text="No applications yet."
+                        Visibility="{Binding RecentEmptyVisibility}" />
                 </StackPanel>
             </Grid>
         </StackPanel>

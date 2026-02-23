@@ -6,6 +6,7 @@ using ApplyMate.Core.Domain;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI.Xaml;
 
 namespace ApplyMate.App.ViewModels;
 
@@ -53,9 +54,19 @@ public sealed partial class DashboardViewModel : ViewModelBase, IRecipient<NoRes
     [ObservableProperty]
     private string? _errorMessage;
 
+    [ObservableProperty]
+    private bool _hasUpcomingInterviews;
+
+    [ObservableProperty]
+    private bool _hasRecentApplications;
+
     public ObservableCollection<JobApplication> UpcomingInterviews { get; }
 
     public ObservableCollection<JobApplication> RecentApplications { get; }
+
+    public Visibility UpcomingEmptyVisibility => HasUpcomingInterviews ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility RecentEmptyVisibility => HasRecentApplications ? Visibility.Collapsed : Visibility.Visible;
 
     [RelayCommand]
     private void AddApplication()
@@ -108,9 +119,11 @@ public sealed partial class DashboardViewModel : ViewModelBase, IRecipient<NoRes
 
             var upcoming = await _repository.GetUpcomingInterviewsAsync(from, to, ct);
             Replace(UpcomingInterviews, upcoming);
+            HasUpcomingInterviews = upcoming.Count > 0;
 
             var recent = await _repository.GetRecentAsync(10, ct);
             Replace(RecentApplications, recent);
+            HasRecentApplications = recent.Count > 0;
         }
         catch (OperationCanceledException)
         {
@@ -134,5 +147,15 @@ public sealed partial class DashboardViewModel : ViewModelBase, IRecipient<NoRes
         {
             target.Add(item);
         }
+    }
+
+    partial void OnHasUpcomingInterviewsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(UpcomingEmptyVisibility));
+    }
+
+    partial void OnHasRecentApplicationsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(RecentEmptyVisibility));
     }
 }
