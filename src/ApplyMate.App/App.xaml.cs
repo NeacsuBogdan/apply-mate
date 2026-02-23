@@ -1,4 +1,5 @@
 using ApplyMate.App.Navigation;
+using ApplyMate.App.Services.Automation;
 using ApplyMate.App.Services.Settings;
 using ApplyMate.App.ViewModels;
 using ApplyMate.Core.Abstractions;
@@ -29,6 +30,9 @@ public partial class App : Application
         var databaseInitializer = Services.GetRequiredService<IApplyMateDatabaseInitializer>();
         databaseInitializer.EnsureCreatedAsync(CancellationToken.None).GetAwaiter().GetResult();
 
+        var noResponseAutomation = Services.GetRequiredService<INoResponseAutomationService>();
+        noResponseAutomation.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+
         CurrentWindow = Services.GetRequiredService<MainWindow>();
         CurrentWindow.Activate();
     }
@@ -48,7 +52,7 @@ public partial class App : Application
     private static void RegisterCore(IServiceCollection services)
     {
         services.AddSingleton<IDateProvider, SystemDateProvider>();
-        services.AddSingleton<ISettingsStore, InMemorySettingsStore>();
+        services.AddSingleton<ISettingsStore, JsonSettingsStore>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
@@ -66,6 +70,7 @@ public partial class App : Application
     {
         services.AddSingleton<PageRegistry>();
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<INoResponseAutomationService, NoResponseAutomationService>();
 
         services.AddTransient<MainWindow>();
         services.AddTransient<MainShellViewModel>();

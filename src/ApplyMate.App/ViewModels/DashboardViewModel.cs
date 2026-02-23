@@ -1,13 +1,15 @@
 using System.Collections.ObjectModel;
+using ApplyMate.App.Messaging;
 using ApplyMate.App.Navigation;
 using ApplyMate.Core.Abstractions;
 using ApplyMate.Core.Domain;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace ApplyMate.App.ViewModels;
 
-public sealed partial class DashboardViewModel : ViewModelBase
+public sealed partial class DashboardViewModel : ViewModelBase, IRecipient<NoResponseRuleAppliedMessage>
 {
     private readonly IJobApplicationRepository _repository;
     private readonly IDateProvider _dateProvider;
@@ -26,6 +28,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
         UpcomingInterviews = new ObservableCollection<JobApplication>();
         RecentApplications = new ObservableCollection<JobApplication>();
+
+        WeakReferenceMessenger.Default.Register(this);
     }
 
     [ObservableProperty]
@@ -76,6 +80,11 @@ public sealed partial class DashboardViewModel : ViewModelBase
         _loadCts?.Cancel();
         _loadCts = new CancellationTokenSource();
         await LoadAsync(_loadCts.Token);
+    }
+
+    public void Receive(NoResponseRuleAppliedMessage message)
+    {
+        _ = RefreshAsync();
     }
 
     public async Task LoadAsync(CancellationToken ct)

@@ -1,12 +1,14 @@
 using System.Collections.ObjectModel;
+using ApplyMate.App.Messaging;
 using ApplyMate.App.Navigation;
 using ApplyMate.Core.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace ApplyMate.App.ViewModels;
 
-public sealed partial class ApplicationsViewModel : ViewModelBase
+public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<NoResponseRuleAppliedMessage>
 {
     private readonly IJobApplicationRepository _repository;
     private readonly INavigationService _navigationService;
@@ -24,6 +26,8 @@ public sealed partial class ApplicationsViewModel : ViewModelBase
         Applications = new ObservableCollection<ApplicationListItemViewModel>();
         StatusOptions = ApplicationStatusOption.FilterOptions;
         SelectedStatus = StatusOptions[0];
+
+        WeakReferenceMessenger.Default.Register(this);
     }
 
     public ObservableCollection<ApplicationListItemViewModel> Applications { get; }
@@ -62,6 +66,11 @@ public sealed partial class ApplicationsViewModel : ViewModelBase
         _loadCts?.Cancel();
         _loadCts = new CancellationTokenSource();
         await LoadInternalAsync(_loadCts.Token);
+    }
+
+    public void Receive(NoResponseRuleAppliedMessage message)
+    {
+        _ = RefreshAsync();
     }
 
     public Task LoadAsync(CancellationToken ct)
