@@ -1,7 +1,8 @@
 using ApplyMate.App.ViewModels;
+using ApplyMate.App.Services.Notifications;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace ApplyMate.App.Views.Pages;
 
@@ -16,8 +17,17 @@ public sealed partial class ApplicationsPage : Page
         DataContext = _viewModel;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
+        base.OnNavigatedTo(e);
+
+        var enableCheckEmailFilter = e.Parameter is string parameter &&
+                                     string.Equals(
+                                         parameter,
+                                         NotificationRouteConstants.CheckEmailFilter,
+                                         StringComparison.OrdinalIgnoreCase);
+
+        _viewModel.SetCheckEmailOnlyMode(enableCheckEmailFilter);
         await _viewModel.LoadAsync(CancellationToken.None);
     }
 

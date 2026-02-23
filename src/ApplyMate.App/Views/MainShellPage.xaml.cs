@@ -1,4 +1,5 @@
 using ApplyMate.App.Navigation;
+using ApplyMate.App.Services.Notifications;
 using ApplyMate.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
@@ -9,6 +10,7 @@ public sealed partial class MainShellPage : Page
 {
     private readonly MainShellViewModel _viewModel;
     private readonly INavigationService _navigationService;
+    private readonly IAppNotificationService _notificationService;
 
     public MainShellPage()
     {
@@ -16,10 +18,12 @@ public sealed partial class MainShellPage : Page
 
         _viewModel = App.Services.GetRequiredService<MainShellViewModel>();
         _navigationService = App.Services.GetRequiredService<INavigationService>();
+        _notificationService = App.Services.GetRequiredService<IAppNotificationService>();
         DataContext = _viewModel;
 
         _navigationService.AttachFrame(ContentFrame);
         _navigationService.NavigateTo(PageKeys.Dashboard, clearBackStack: true);
+        _notificationService.FlushPendingActivation();
 
         RootNavigationView.BackRequested += OnBackRequested;
     }

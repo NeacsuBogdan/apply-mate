@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using ApplyMate.App.Messaging;
 using ApplyMate.App.Navigation;
 using ApplyMate.Core.Abstractions;
+using ApplyMate.Core.Domain;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -15,6 +16,7 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
 
     private CancellationTokenSource? _loadCts;
     private CancellationTokenSource? _searchDebounceCts;
+    private bool _checkEmailOnlyMode;
 
     public ApplicationsViewModel(
         IJobApplicationRepository repository,
@@ -78,6 +80,15 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
         return LoadInternalAsync(ct);
     }
 
+    public void SetCheckEmailOnlyMode(bool enabled)
+    {
+        _checkEmailOnlyMode = enabled;
+        if (enabled)
+        {
+            SelectedStatus = StatusOptions[0];
+        }
+    }
+
     partial void OnSearchTextChanged(string value)
     {
         _ = DebounceAndRefreshAsync();
@@ -85,6 +96,7 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
 
     partial void OnSelectedStatusChanged(ApplicationStatusOption value)
     {
+        _checkEmailOnlyMode = false;
         _ = RefreshAsync();
     }
 
@@ -114,6 +126,13 @@ public sealed partial class ApplicationsViewModel : ViewModelBase, IRecipient<No
                 SearchText,
                 SelectedStatus.Value,
                 ct);
+
+            if (_checkEmailOnlyMode)
+            {
+                apps = apps
+                    .Where(x => x.Status is ApplicationStatus.Applied or ApplicationStatus.InProgress)
+                    .ToList();
+            }
 
             Applications.Clear();
             foreach (var app in apps)

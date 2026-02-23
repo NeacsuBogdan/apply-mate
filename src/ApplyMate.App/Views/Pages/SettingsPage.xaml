@@ -55,6 +55,10 @@
                 <Button
                     Command="{Binding SaveCommand}"
                     Content="Save Settings" />
+                <Button
+                    Command="{Binding SendTestNotificationCommand}"
+                    Content="Send test notification now"
+                    Visibility="{Binding DebugNotificationVisibility}" />
                 <ProgressRing
                     Height="24"
                     IsActive="{Binding IsBusy}"

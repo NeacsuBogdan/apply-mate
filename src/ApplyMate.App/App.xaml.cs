@@ -1,5 +1,6 @@
 using ApplyMate.App.Navigation;
 using ApplyMate.App.Services.Automation;
+using ApplyMate.App.Services.Notifications;
 using ApplyMate.App.Services.Settings;
 using ApplyMate.App.ViewModels;
 using ApplyMate.Core.Abstractions;
@@ -20,6 +21,9 @@ public partial class App : Application
     {
         InitializeComponent();
         Services = ConfigureServices();
+
+        var notificationService = Services.GetRequiredService<IAppNotificationService>();
+        notificationService.Initialize();
     }
 
     public static IServiceProvider Services { get; private set; } = null!;
@@ -32,6 +36,9 @@ public partial class App : Application
 
         var noResponseAutomation = Services.GetRequiredService<INoResponseAutomationService>();
         noResponseAutomation.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        var notificationService = Services.GetRequiredService<IAppNotificationService>();
+        notificationService.RescheduleAsync(CancellationToken.None).GetAwaiter().GetResult();
 
         CurrentWindow = Services.GetRequiredService<MainWindow>();
         CurrentWindow.Activate();
@@ -71,6 +78,7 @@ public partial class App : Application
         services.AddSingleton<PageRegistry>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<INoResponseAutomationService, NoResponseAutomationService>();
+        services.AddSingleton<IAppNotificationService, AppNotificationService>();
 
         services.AddTransient<MainWindow>();
         services.AddTransient<MainShellViewModel>();
