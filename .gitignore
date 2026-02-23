@@ -1,0 +1,31 @@
+﻿# Build artifacts
+bin/
+obj/
+
+# User- and IDE-specific
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / ReSharper
+.idea/
+*.sln.iml
+_ReSharper*/
+*.DotSettings.user
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Local tooling caches used in this workspace
+.dotnet/
+.nuget/
+
+# Test results
+TestResults/
+*.trx
+
+# Logs
+*.log

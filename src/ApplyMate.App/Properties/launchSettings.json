@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ApplyMate.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ApplyMate.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
