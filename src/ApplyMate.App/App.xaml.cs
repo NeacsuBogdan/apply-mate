@@ -32,19 +32,43 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        var databaseInitializer = Services.GetRequiredService<IApplyMateDatabaseInitializer>();
-        databaseInitializer.EnsureCreatedAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-        var noResponseAutomation = Services.GetRequiredService<INoResponseAutomationService>();
-        noResponseAutomation.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-        var notificationService = Services.GetRequiredService<IAppNotificationService>();
-        notificationService.RescheduleAsync(CancellationToken.None).GetAwaiter().GetResult();
-
         CurrentWindow = Services.GetRequiredService<MainWindow>();
+        CurrentWindow.Activate();
+
         var trayIconService = Services.GetRequiredService<ITrayIconService>();
         trayIconService.Initialize(CurrentWindow);
-        CurrentWindow.Activate();
+
+        _ = InitializeStartupServicesAsync();
+    }
+
+    private async Task InitializeStartupServicesAsync()
+    {
+        try
+        {
+            var databaseInitializer = Services.GetRequiredService<IApplyMateDatabaseInitializer>();
+            await databaseInitializer.EnsureCreatedAsync(CancellationToken.None);
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            var noResponseAutomation = Services.GetRequiredService<INoResponseAutomationService>();
+            await noResponseAutomation.StartAsync(CancellationToken.None);
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            var notificationService = Services.GetRequiredService<IAppNotificationService>();
+            await notificationService.RescheduleAsync(CancellationToken.None);
+        }
+        catch
+        {
+        }
     }
 
     private static IServiceProvider ConfigureServices()
