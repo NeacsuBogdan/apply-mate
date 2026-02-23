@@ -15,8 +15,6 @@ namespace ApplyMate.App;
 
 public partial class App : Application
 {
-    private Window? _window;
-
     public App()
     {
         InitializeComponent();
@@ -24,14 +22,15 @@ public partial class App : Application
     }
 
     public static IServiceProvider Services { get; private set; } = null!;
+    public static Window? CurrentWindow { get; private set; }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         var databaseInitializer = Services.GetRequiredService<IApplyMateDatabaseInitializer>();
         databaseInitializer.EnsureCreatedAsync(CancellationToken.None).GetAwaiter().GetResult();
 
-        _window = Services.GetRequiredService<MainWindow>();
-        _window.Activate();
+        CurrentWindow = Services.GetRequiredService<MainWindow>();
+        CurrentWindow.Activate();
     }
 
     private static IServiceProvider ConfigureServices()
