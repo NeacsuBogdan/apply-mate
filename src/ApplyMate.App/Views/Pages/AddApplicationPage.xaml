@@ -61,6 +61,26 @@
                     Text="{Binding AppliedOnDisplay}" />
             </StackPanel>
 
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        FontWeight="SemiBold"
+                        Text="CV" />
+                    <TextBlock Text="{Binding PendingCvDisplayName}" />
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            Click="OnAttachCvClick"
+                            Content="Attach CV" />
+                        <Button
+                            Command="{Binding RemoveCvCommand}"
+                            Content="Remove CV"
+                            IsEnabled="{Binding HasPendingCv}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <StackPanel
                 Orientation="Horizontal"
                 Spacing="8">

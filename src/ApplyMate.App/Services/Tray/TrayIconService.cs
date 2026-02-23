@@ -1,6 +1,4 @@
 using System.Runtime.InteropServices;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using WinRT.Interop;
@@ -39,7 +37,6 @@ public sealed class TrayIconService : ITrayIconService
 
     private Window? _window;
     private DispatcherQueue? _dispatcherQueue;
-    private AppWindow? _appWindow;
     private IntPtr _hwnd;
     private IntPtr _originalWndProc;
     private NotifyIconData _notifyIconData;
@@ -51,6 +48,8 @@ public sealed class TrayIconService : ITrayIconService
     {
         _wndProcDelegate = WindowProcedure;
     }
+
+    public bool IsExitRequested => _isExitRequested;
 
     public void Initialize(Window window)
     {
@@ -67,12 +66,6 @@ public sealed class TrayIconService : ITrayIconService
             _window = window;
             _dispatcherQueue = window.DispatcherQueue;
             _hwnd = WindowNative.GetWindowHandle(window);
-            var windowId = Win32Interop.GetWindowIdFromWindow(_hwnd);
-            _appWindow = AppWindow.GetFromWindowId(windowId);
-            if (_appWindow is not null)
-            {
-                _appWindow.Closing += OnAppWindowClosing;
-            }
 
             var wndProcPtr = Marshal.GetFunctionPointerForDelegate(_wndProcDelegate);
             _originalWndProc = SetWindowLongPtr(_hwnd, GwlpWndProc, wndProcPtr);
@@ -106,12 +99,6 @@ public sealed class TrayIconService : ITrayIconService
 
             if (_isInitialized)
             {
-                if (_appWindow is not null)
-                {
-                    _appWindow.Closing -= OnAppWindowClosing;
-                    _appWindow = null;
-                }
-
                 _ = Shell_NotifyIcon(NimDelete, ref _notifyIconData);
                 SetWindowLongPtr(_hwnd, GwlpWndProc, _originalWndProc);
                 _isInitialized = false;
@@ -119,15 +106,14 @@ public sealed class TrayIconService : ITrayIconService
         }
     }
 
-    private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    public void HideToTray()
     {
-        if (_isExitRequested)
-        {
-            return;
-        }
-
-        args.Cancel = true;
         HideWindow();
+    }
+
+    public void ShowFromTray()
+    {
+        ShowWindow();
     }
 
     private IntPtr WindowProcedure(

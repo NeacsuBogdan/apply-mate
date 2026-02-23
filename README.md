@@ -6,6 +6,7 @@ ApplyMate is a packaged WinUI 3 desktop app for tracking job applications, inter
 
 - Dashboard with status counters, upcoming interviews, and recent applications.
 - Add, browse, search, filter, and update applications with status history tracking.
+- Attach a CV during add flow or later in details.
 - Details editing with interview date/time and CV attach/open/remove workflows.
 - Local SQLite persistence through EF Core.
 - Automatic no-response status updates based on configurable thresholds.
